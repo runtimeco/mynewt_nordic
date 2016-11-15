@@ -1,0 +1,5 @@
+repo.name: mynewt_arduino_zero
+repo.versions:
+    "1.0.0-b1": "master"
+    "0-latest": "1.0.0-b1"
+    "0-dev": "1.0.0-b1"
