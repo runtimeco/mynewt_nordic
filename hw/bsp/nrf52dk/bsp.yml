@@ -18,7 +18,7 @@
 #
 
 bsp.arch: cortex_m4
-bsp.compiler: compiler/arm-none-eabi-m4
+bsp.compiler: '@apache-mynewt-core/compiler/arm-none-eabi-m4'
 bsp.linkerscript:
     - "hw/bsp/nrf52dk/nrf52xxaa.ld"
     - "hw/mcu/nordic/nrf52xxx/nrf52.ld"
