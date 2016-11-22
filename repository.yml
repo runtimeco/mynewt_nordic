@@ -19,8 +19,11 @@
 
 repo.name: mynewt_nordic
 repo.versions:
-    # 9.9.1 = 1.0.0-b1
-    "9.9.1": "master"
+    "0.0.0": "develop"
+    "0.0.1": "master"
+    "0.9.9": "mynewt_1_0_0_b1_tag"
 
-    "0-latest": "9.9.1"
-    "0-dev": "9.9.1"
+    "0-latest": "0.9.9"     # 1.0.0-b1
+    "0-dev": "0.0.0"        # develop
+
+    "1.0-latest": "0.9.9"   # 1.0.0-b1
