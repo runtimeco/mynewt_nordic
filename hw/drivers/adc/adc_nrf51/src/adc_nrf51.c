@@ -91,7 +91,7 @@ nrf51_adc_event_handler(const nrf_drv_adc_evt_t *event)
  *             if resource unavailable.  If OS_WAIT_FOREVER specified, blocks
  *             until resource is available.
  * @param arg  Argument provided by higher layer to open, in this case
- *             it can be a nrf_drv_saadc_config_t, to override the default
+ *             it can be a nrf_drv_adc_config_t, to override the default
  *             configuration.
  *
  * @return 0 on success, non-zero on failure.
