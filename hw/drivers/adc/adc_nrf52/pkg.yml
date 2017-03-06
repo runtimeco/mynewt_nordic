@@ -26,3 +26,4 @@ pkg.apis:
     - ADC_HW_IMPL
 pkg.deps:
    - "@apache-mynewt-core/hw/drivers/adc"
+   - hw/mcu/nordic_sdk
