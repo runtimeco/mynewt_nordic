@@ -89,12 +89,13 @@ nrf52_pwm_configure_channel(struct pwm_dev *dev, uint8_t cnum, void *data)
  * for 65535-fraction clocks.
  *
  * @param dev The device to configure.
+ * @param cnum The channel number.
  * @param fraction The fraction value.
  *
  * @return 0 on success, negative on error.
  */
 static int
-nrf52_pwm_enable_duty_cycle(struct pwm_dev *pwm_d, uint16_t fraction)
+nrf52_pwm_enable_duty_cycle(struct pwm_dev *pwm_d, uint8_t cnum, uint16_t fraction)
 {
     return 0;
 }
