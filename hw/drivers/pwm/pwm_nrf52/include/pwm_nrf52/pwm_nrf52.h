@@ -27,6 +27,9 @@
 extern "C" {
 #endif
 
+/* struct nrf52_adc_chan_cfg { */
+/*     void *duty_cycles; */
+/* }; */
 
 int nrf52_pwm_dev_init(struct os_dev *, void *);
 
