@@ -6,7 +6,7 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #  http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing,
@@ -26,8 +26,10 @@ pkg.keywords:
 
 pkg.type: sdk
 
-pkg.ign_files.BSP_NRF52: 
+pkg.ign_files.BSP_NRF52:
     - "nrf_drv_adc.c"
+    - "nrf_drv_pwm.c"
+    - "app_pwm.c"
     - "pstorage*"
     - "sdk_mapped_flags.c"
 
@@ -51,9 +53,9 @@ pkg.src_dirs:
     - "src/ext/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/"
     - "src/ext/nRF5_SDK_11.0.0_89a8197/components/libraries/fifo/"
     - "src/ext/nRF5_SDK_11.0.0_89a8197/components/libraries/util/"
-
+    #- "src/ext/nRF5_SDK_11.0.0_89a8197/components/libraries/pwm/"
 pkg.cflags: -std=gnu99 -DNRF52_PAN_28
 
-pkg.deps: 
+pkg.deps:
     - '@apache-mynewt-core/hw/hal'
     - '@apache-mynewt-core/hw/cmsis-core'

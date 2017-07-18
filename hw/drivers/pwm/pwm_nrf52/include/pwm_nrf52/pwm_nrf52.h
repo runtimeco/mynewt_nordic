@@ -22,7 +22,8 @@
 
 #include <pwm/pwm.h>
 
-
+#include <nrf.h>
+#include <nrf_pwm.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
