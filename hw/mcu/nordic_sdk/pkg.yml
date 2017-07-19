@@ -28,8 +28,6 @@ pkg.type: sdk
 
 pkg.ign_files.BSP_NRF52:
     - "nrf_drv_adc.c"
-    - "nrf_drv_pwm.c"
-    - "app_pwm.c"
     - "pstorage*"
     - "sdk_mapped_flags.c"
 
