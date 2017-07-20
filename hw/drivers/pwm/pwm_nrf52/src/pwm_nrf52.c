@@ -20,7 +20,7 @@
 #include <hal/hal_bsp.h>
 #include <assert.h>
 #include <os/os.h>
-
+#include <errno.h>
 #include <pwm/pwm.h>
 #include <string.h>
 
@@ -49,9 +49,10 @@ extern void PWM0_IRQHandler(void);
 
 struct nrf53_pwm_dev_global {
     bool in_use;
+    bool playing;
     nrf_drv_pwm_t *drv_instance;
     nrf_drv_pwm_config_t *config;
-    void *duty_cycles;
+    nrf_pwm_values_individual_t *duty_cycles;
 };
 
 static struct nrf53_pwm_dev_global instances[PWM_MAX_INSTANCES];
@@ -71,11 +72,33 @@ static struct nrf53_pwm_dev_global instances[PWM_MAX_INSTANCES];
 static int
 add_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
 {
-    nrf_drv_pwm_config_t * config;
+    nrf_drv_pwm_config_t *config;
     nrf_drv_pwm_t instance = NRF_DRV_PWM_INSTANCE(0);
-
     /* assert(instances[inst_id].drv_instance == NULL && */
     /*        instances[inst_id].config == NULL); */
+
+    /* switch (inst_id) { */
+    /* #if (PWM0_ENABLED == 1) */
+    /* case 0: */
+    /*     instance = NRF_DRV_PWM_INSTANCE(0); */
+    /*     break; */
+    /* #endif */
+
+    /* #if (PWM0_ENABLED == 1) */
+    /* case 1: */
+    /*     instance = NRF_DRV_PWM_INSTANCE(1); */
+    /*     break; */
+    /* #endif */
+
+    /* #if (PWM0_ENABLED == 1) */
+    /* case 2: */
+    /*     instance = NRF_DRV_PWM_INSTANCE(2); */
+    /*     break; */
+    /* #endif */
+
+    /* default: */
+    /*     return (EINVAL) */
+    /* } */
 
     instances[inst_id].drv_instance =
         (nrf_drv_pwm_t *) os_malloc(sizeof(nrf_drv_pwm_t));
@@ -86,6 +109,7 @@ add_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
     assert(instances[inst_id].config);
 
     memcpy(instances[inst_id].drv_instance, &instance, sizeof(nrf_drv_pwm_t));
+    instances[inst_id].playing = false;
     instances[inst_id].duty_cycles = NULL;
 
     //what should the defaults be?
@@ -105,7 +129,7 @@ add_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
         memcpy(config, init_conf, sizeof(nrf_drv_pwm_config_t));
     }
 
-    return 0;
+    return (0);
 }
 
 /**
@@ -149,26 +173,29 @@ nrf52_pwm_open(struct os_dev *odev, uint32_t wait, void *arg)
     if (os_started()) {
         stat = os_mutex_pend(&dev->pwm_lock, wait);
         if (stat != OS_OK) {
-            return stat;
+            return (stat);
         }
     }
 
     if (odev->od_flags & OS_DEV_F_STATUS_OPEN) {
         os_mutex_release(&dev->pwm_lock);
         stat = OS_EBUSY;
-        return stat;
+        return (stat);
     }
 
-    add_instance(inst_id, arg);
+    stat = add_instance(inst_id, arg);
+    if (stat) {
+        return (stat);
+    }
 
     stat = nrf_drv_pwm_init(instances[inst_id].drv_instance,
                             instances[inst_id].config,
                             NULL);
     if (stat != NRF_SUCCESS) {
-        return -stat;
+        return (stat);
     }
 
-    return 0;
+    return (0);
 }
 
 /**
@@ -195,9 +222,28 @@ nrf52_pwm_close(struct os_dev *odev)
         os_mutex_release(&dev->pwm_lock);
     }
 
-    return 0;
+    return (0);
 }
 
+/*
+ * Play using current configuration.
+ */
+static void
+play_current_config(struct nrf53_pwm_dev_global *instance)
+{
+    nrf_pwm_sequence_t const seq =
+        {
+            .values.p_individual = instance->duty_cycles,
+            .length              = 4,
+            .repeats             = 0,
+            .end_delay           = 0
+        };
+
+    nrf_drv_pwm_simple_playback(instances->drv_instance,
+                                &seq,
+                                1,
+                                NRF_DRV_PWM_FLAG_LOOP);
+}
 
 /**
  * Configure a channel on the PWM device.
@@ -214,7 +260,7 @@ nrf52_pwm_configure_channel(struct pwm_dev *dev, uint8_t cnum, void *data)
     int inst_id = dev->pwm_instance_id;
     nrf_drv_pwm_uninit(instances[inst_id].drv_instance);
 
-    return 0;
+    return (0);
 }
 
 /**
@@ -242,24 +288,15 @@ nrf52_pwm_enable_duty_cycle(struct pwm_dev *dev, uint8_t cnum, uint16_t fraction
     assert (config->output_pins[cnum] != NRF_DRV_PWM_PIN_NOT_USED);
 
     if (instances[inst_id].duty_cycles == NULL) {
-        instances[inst_id].duty_cycles = calloc(4, sizeof(nrf_pwm_sequence_t));
+        instances[inst_id].duty_cycles = (nrf_pwm_values_individual_t *)
+            calloc(1, sizeof(nrf_pwm_sequence_t));
         assert(instances[inst_id].duty_cycles);
     }
 
-    nrf_pwm_sequence_t const seq =
-        {
-            .values.p_individual = instances[inst_id].duty_cycles,
-            .length              = 4,
-            .repeats             = 0,
-            .end_delay           = 0
-        };
-
-    ((uint16_t *) seq.values.p_individual)[cnum] = fraction;
-    nrf_drv_pwm_simple_playback(instances[inst_id].drv_instance,
-                                &seq,
-                                1,
-                                NRF_DRV_PWM_FLAG_LOOP);
-    return 0;
+    ((uint16_t *) instances[inst_id].duty_cycles)[cnum] = fraction;
+    play_current_config(&instances[inst_id]);
+    instances[inst_id].playing = true;
+    return (0);
 }
 
 /**
@@ -273,7 +310,18 @@ nrf52_pwm_enable_duty_cycle(struct pwm_dev *dev, uint8_t cnum, uint16_t fraction
 static int
 nrf52_pwm_disable(struct pwm_dev *dev, uint8_t cnum)
 {
-    return 0;
+    int inst_id = dev->pwm_instance_id;
+    instances[inst_id].config->output_pins[cnum] = NRF_DRV_PWM_PIN_NOT_USED;
+
+    nrf_drv_pwm_uninit(instances[inst_id].drv_instance);
+    nrf_drv_pwm_init(instances[inst_id].drv_instance,
+                     instances[inst_id].config,
+                     NULL);
+    //check if there is any channel in use
+    if (instances[inst_id].playing) {
+        play_current_config(&instances[inst_id]);
+    }
+    return (0);
 }
 
 /**
@@ -289,44 +337,48 @@ nrf52_pwm_disable(struct pwm_dev *dev, uint8_t cnum)
 static int
 nrf52_pwm_set_frequency(struct pwm_dev *dev, uint32_t freq_hz)
 {
-    //check if the freq is acceptable
-    //set it
-    /* int frq; */
-    /* int inst_id = dev->pwm_instance_id; */
+    int inst_id = dev->pwm_instance_id;
+    nrf_pwm_clk_t *frq = &instances[inst_id].config->base_clock;
 
-    /* switch (freq_hz) { */
-    /* case 16000000: */
-    /*     frq = NRF_PWM_CLK_16MHz; */
-    /*     break; */
-    /* case 8000000: */
-    /*     frq = NRF_PWM_CLK_8MHz; */
-    /*     break; */
-    /* case 4000000: */
-    /*     frq = NRF_PWM_CLK_4MHz; */
-    /*     break; */
-    /* case 2000000: */
-    /*     frq = NRF_PWM_CLK_2MHz; */
-    /*     break; */
-    /* case 1000000: */
-    /*     frq = NRF_PWM_CLK_1MHz; */
-    /*     break; */
-    /* case 500000: */
-    /*     frq = NRF_PWM_CLK_500kHz; */
-    /*     break; */
-    /* case 250000: */
-    /*     frq = NRF_PWM_CLK_250kHz; */
-    /*     break; */
-    /* case 125000: */
-    /*     frq = NRF_PWM_CLK_125kHz; */
-    /*     break; */
-    /* default: */
-    /*     return (OS_EINVAL); */
-    /* } */
+    switch (freq_hz) {
+    case 16000000:
+        *frq = NRF_PWM_CLK_16MHz;
+        break;
+    case 8000000:
+        *frq = NRF_PWM_CLK_8MHz;
+        break;
+    case 4000000:
+        *frq = NRF_PWM_CLK_4MHz;
+        break;
+    case 2000000:
+        *frq = NRF_PWM_CLK_2MHz;
+        break;
+    case 1000000:
+        *frq = NRF_PWM_CLK_1MHz;
+        break;
+    case 500000:
+        *frq = NRF_PWM_CLK_500kHz;
+        break;
+    case 250000:
+        *frq = NRF_PWM_CLK_250kHz;
+        break;
+    case 125000:
+        *frq = NRF_PWM_CLK_125kHz;
+        break;
+    default:
+        return (EINVAL);
+    }
 
-    /* nrf_drv_pwm_uninit(instances[inst_id].drv_instance); */
-    /* instances[inst_id].config.base_clock = frq; */
-    //Needs work
-    return 0;
+    nrf_drv_pwm_uninit(instances[inst_id].drv_instance);
+    nrf_drv_pwm_init(instances[inst_id].drv_instance,
+                     instances[inst_id].config,
+                     NULL);
+
+    if (instances[inst_id].playing) {
+        play_current_config(&instances[inst_id]);
+    }
+
+    return (0);
 }
 
 /**
@@ -340,10 +392,10 @@ static int
 nrf52_pwm_get_clock_freq(struct pwm_dev *dev)
 {
     int inst_id = dev->pwm_instance_id;
-
-    if (instances[inst_id].config == NULL) {
-        return (OS_EINVAL);
-    }
+    /* if (!instances[inst_id].in_use) { */
+    /*     return (EINVAL); */
+    /* } */
+    /* assert(instances[inst_id].in_use); */
 
     switch (instances[inst_id].config->base_clock) {
     case NRF_PWM_CLK_16MHz:
@@ -363,8 +415,7 @@ nrf52_pwm_get_clock_freq(struct pwm_dev *dev)
     case NRF_PWM_CLK_125kHz:
         return (125000);
     }
-
-    return (OS_EINVAL);
+    return (EINVAL);
 }
 
 /**
@@ -380,8 +431,7 @@ nrf52_pwm_get_resolution_bits(struct pwm_dev *dev)
     //resolution_bits = log2(PWM_Frequency / Timer_Clock_Frequency)
     // http://ww1.microchip.com/downloads/en/DeviceDoc/70209A.pdf page16
     /* float pwm_freq = (float) nrf52_pwm_get_clock_freq(dev); */
-
-    return 0;
+    return (0);
 }
 
 /**
@@ -392,7 +442,6 @@ nrf52_pwm_get_resolution_bits(struct pwm_dev *dev)
 int
 nrf52_pwm_dev_init(struct os_dev *odev, void *arg)
 {
-
     struct pwm_dev *dev;
     struct pwm_driver_funcs *pwm_funcs;
 
@@ -401,7 +450,6 @@ nrf52_pwm_dev_init(struct os_dev *odev, void *arg)
     if (arg) {
         dev->pwm_instance_id = *((int*) arg);
     } else {
-        /* dev->pwm_instance_id = 0; */
         dev->pwm_instance_id = 0;
         while (dev->pwm_instance_id < PWM_MAX_INSTANCES) {
             if (!instances[dev->pwm_instance_id].in_use) {
@@ -410,6 +458,7 @@ nrf52_pwm_dev_init(struct os_dev *odev, void *arg)
             dev->pwm_instance_id++;
         }
     }
+    /* instances[dev->pwm_instance_id].in_use = true; */
 
     dev->pwm_chan_count = NRF_PWM_CHANNEL_COUNT;
     os_mutex_init(&dev->pwm_lock);
