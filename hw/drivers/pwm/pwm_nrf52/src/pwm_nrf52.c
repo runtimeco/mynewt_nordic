@@ -44,7 +44,7 @@
 #include "pwm_nrf52/pwm_nrf52.h"
 
 #define PWM_MAX_INSTANCES 3
-#define PWM_NO_INSTANCE -1
+#define MAX_FREQ_HZ 16000000
 //static nrf_drv_pwm_t m_pwm0 = NRF_DRV_PWM_INSTANCE(0);
 
 struct nrf53_pwm_dev_global {
@@ -72,7 +72,7 @@ static struct nrf53_pwm_dev_global instances[] =
     [1].config = NRF_DRV_PWM_DEFAULT_CONFIG(1),
     [1].duty_cycles = NULL
 #endif
-#if (PWM1_ENABLED == 1)
+#if (PWM2_ENABLED == 1)
     ,
     [2].in_use = false,
     [2].playing = false,
@@ -97,6 +97,9 @@ static struct nrf53_pwm_dev_global instances[] =
 static int
 init_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
 {
+    if(!instances[inst_id].in_use) {
+        return (EINVAL);
+    }
     nrf_drv_pwm_config_t *config;
     instances[inst_id].duty_cycles = NULL;
 
@@ -121,10 +124,10 @@ init_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
 }
 
 /**
- * Remove a driver instance.
+ * Cleanup a driver instance.
  */
 static void
-remove_instance(int inst_id)
+cleanup_instance(int inst_id)
 {
     if (instances[inst_id].playing) {
         free(instances[inst_id].duty_cycles);
@@ -197,7 +200,7 @@ nrf52_pwm_close(struct os_dev *odev)
 
     nrf_drv_pwm_uninit(&instances[inst_id].drv_instance);
 
-    remove_instance(inst_id);
+    cleanup_instance(inst_id);
 
     if (os_started()) {
         os_mutex_release(&dev->pwm_lock);
@@ -246,6 +249,15 @@ nrf52_pwm_configure_channel(struct pwm_dev *dev, uint8_t cnum, void *data)
     config->output_pins[cnum] |= (cfg->inverted) ?
         NRF_DRV_PWM_PIN_INVERTED : config->output_pins[cnum];
 
+    if (instances[inst_id].playing) {
+        nrf_drv_pwm_uninit(&instances[inst_id].drv_instance);
+        nrf_drv_pwm_init(&instances[inst_id].drv_instance,
+                         &instances[inst_id].config,
+                         NULL);
+
+        play_current_config(&instances[inst_id]);
+    }
+
     return (0);
 }
 
@@ -287,10 +299,9 @@ nrf52_pwm_enable_duty_cycle(struct pwm_dev *dev, uint8_t cnum, uint16_t fraction
         if (stat != NRF_SUCCESS) {
             return (stat);
         }
+        play_current_config(&instances[inst_id]);
+        instances[inst_id].playing = true;
     }
-
-    play_current_config(&instances[inst_id]);
-    instances[inst_id].playing = true;
     return (0);
 }
 
@@ -420,9 +431,12 @@ nrf52_pwm_get_clock_freq(struct pwm_dev *dev)
 static int
 nrf52_pwm_get_resolution_bits(struct pwm_dev *dev)
 {
-    //resolution_bits = log2(PWM_Frequency / Timer_Clock_Frequency)
+    /* int inst_id = dev->pwm_instance_id; */
+    /* assert(instances[inst_id].in_use); */
     /* float pwm_freq = (float) nrf52_pwm_get_clock_freq(dev); */
-    return (0);
+    /* int resolution_bits = (int )log2(pwm_freq/ MAX_FREQ_HZ) */
+    /* return (resolution_bits); */
+    return 0;
 }
 
 /**
@@ -442,7 +456,7 @@ nrf52_pwm_dev_init(struct os_dev *odev, void *arg)
         dev->pwm_instance_id = *((int*) arg);
     } else {
         dev->pwm_instance_id = 0;
-        while (dev->pwm_instance_id < PWM_MAX_INSTANCES) {
+        while (dev->pwm_instance_id < PWM_COUNT) {
             if (!instances[dev->pwm_instance_id].in_use) {
                 break;
             }
