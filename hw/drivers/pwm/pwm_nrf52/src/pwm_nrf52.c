@@ -399,6 +399,7 @@ static int
 nrf52_pwm_get_clock_freq(struct pwm_dev *dev)
 {
     int inst_id = dev->pwm_instance_id;
+    assert(instances[inst_id].in_use);
 
     switch (instances[inst_id].config.base_clock) {
     case NRF_PWM_CLK_16MHz:
@@ -431,12 +432,28 @@ nrf52_pwm_get_clock_freq(struct pwm_dev *dev)
 static int
 nrf52_pwm_get_resolution_bits(struct pwm_dev *dev)
 {
-    /* int inst_id = dev->pwm_instance_id; */
-    /* assert(instances[inst_id].in_use); */
-    /* float pwm_freq = (float) nrf52_pwm_get_clock_freq(dev); */
-    /* int resolution_bits = (int )log2(pwm_freq/ MAX_FREQ_HZ) */
-    /* return (resolution_bits); */
-    return 0;
+    int inst_id = dev->pwm_instance_id;
+    assert(instances[inst_id].in_use);
+
+    switch (instances[inst_id].config.base_clock) {
+    case NRF_PWM_CLK_16MHz:
+        return (0);
+    case NRF_PWM_CLK_8MHz:
+        return (1);
+    case NRF_PWM_CLK_4MHz:
+        return (2);
+    case NRF_PWM_CLK_2MHz:
+        return (3);
+    case NRF_PWM_CLK_1MHz:
+        return (4);
+    case NRF_PWM_CLK_500kHz:
+        return (5);
+    case NRF_PWM_CLK_250kHz:
+        return (6);
+    case NRF_PWM_CLK_125kHz:
+        return (7);
+    }
+    return (EINVAL);
 }
 
 /**
