@@ -30,22 +30,16 @@
 #include <nrf_pwm.h>
 #include <nrf_drv_pwm.h>
 #include <nrf_drv_clock.h>
-/* #include <bsp/cmsis_nvic.h> */
-#include <app_timer.h>
 
-//#include <app_error.h>
 #include <app_util_platform.h>
 #include <nrf_drv_ppi.h>
 #include <nrf_drv_timer.h>
-
-/* extern void PWM0_IRQHandler(void); */
 
 /* Mynewt Nordic driver */
 #include "pwm_nrf52/pwm_nrf52.h"
 
 #define PWM_MAX_INSTANCES 3
 #define MAX_FREQ_HZ 16000000
-//static nrf_drv_pwm_t m_pwm0 = NRF_DRV_PWM_INSTANCE(0);
 
 struct nrf53_pwm_dev_global {
     bool in_use;
@@ -495,6 +489,5 @@ nrf52_pwm_dev_init(struct os_dev *odev, void *arg)
     pwm_funcs->pwm_get_resolution_bits = nrf52_pwm_get_resolution_bits;
     pwm_funcs->pwm_disable = nrf52_pwm_disable;
 
-    /* NVIC_SetVector(PWM0_IRQn, (uint32_t) PWM0_IRQHandler); */
     return (0);
 }
