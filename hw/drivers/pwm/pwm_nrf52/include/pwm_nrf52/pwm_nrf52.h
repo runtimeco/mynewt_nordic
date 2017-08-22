@@ -28,11 +28,6 @@
 extern "C" {
 #endif
 
-/* struct nrf52_pwm_chan_cfg { */
-/*     uint8_t pin; */
-/*     bool inverted; */
-/* }; */
-
 int nrf52_pwm_dev_init(struct os_dev *, void *);
 
 #ifdef __cplusplus
