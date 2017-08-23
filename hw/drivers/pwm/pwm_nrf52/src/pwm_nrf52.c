@@ -228,15 +228,16 @@ play_current_config(struct nrf53_pwm_dev_global *instance)
  *
  * @param dev The device to configure.
  * @param cnum The channel number to configure.
- * @param data Driver specific configuration data for this channel.
+ * @param cfg  A pwm_chan_cfg data structure.
  *
  * @return 0 on success, non-zero error code on failure.
  */
 static int
-nrf52_pwm_configure_channel(struct pwm_dev *dev, uint8_t cnum, void *data)
+nrf52_pwm_configure_channel(struct pwm_dev *dev,
+                            uint8_t cnum,
+                            struct pwm_chan_cfg *cfg)
 {
     int inst_id = dev->pwm_instance_id;
-    struct nrf52_pwm_chan_cfg *cfg = (struct nrf52_pwm_chan_cfg *) data;
     nrf_drv_pwm_config_t *config = &instances[inst_id].config;
 
     config->output_pins[cnum] = cfg->pin;
