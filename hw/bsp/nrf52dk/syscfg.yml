@@ -90,6 +90,26 @@ syscfg.defs:
         description: 'NRF52 I2C (TWI) interface 0'
         value:  '0'
 
+    ADC_0:
+        description: 'NRF52 ADC 0'
+        value:  1
+
+    ADC_0_RESOLUTION:
+        description: 'NRF52 ADC 0 RESOLUTION'
+        value: 'SAADC_CONFIG_RESOLUTION'
+
+    ADC_0_OVERSAMPLE:
+        description: 'NRF52 ADC 0 OVERSAMPLE'
+        value: 'SAADC_CONFIG_OVERSAMPLE'
+
+    ADC_0_INTERRUPT_PRIORITY:
+        description: 'NRF52 ADC IRQ PRIORITY'
+        value: 'SAADC_CONFIG_IRQ_PRIORITY'
+
+    ADC:
+        description: 'NRF52 ADC'
+        value: 1
+
     PWM_0:
         description: 'NRF52 PWM 0'
         value: 1

@@ -42,6 +42,11 @@
 #endif
 #include "os/os_dev.h"
 #include "bsp.h"
+#if MYNEWT_VAL(ADC)
+#include <adc_nrf52/adc_nrf52.h>
+#include <app_util_platform.h>
+#include <nrf_drv_saadc.h>
+#endif
 #if MYNEWT_VAL(PWM)
 #include <pwm_nrf52/pwm_nrf52.h>
 #endif
@@ -83,6 +88,15 @@ static const struct nrf52_hal_spi_cfg os_bsp_spi0s_cfg = {
     .mosi_pin     = 24,
     .miso_pin     = 25,
     .ss_pin       = 22,
+};
+#endif
+
+#if MYNEWT_VAL(ADC_0)
+static struct adc_dev os_bsp_adc0;
+static nrf_drv_saadc_config_t os_bsp_adc0_config = {
+    .resolution         = MYNEWT_VAL(ADC_0_RESOLUTION),
+    .oversample         = MYNEWT_VAL(ADC_0_OVERSAMPLE),
+    .interrupt_priority = MYNEWT_VAL(ADC_0_INTERRUPT_PRIORITY),
 };
 #endif
 
@@ -193,6 +207,15 @@ hal_bsp_init(void)
 #if MYNEWT_VAL(TIMER_5)
     rc = hal_timer_init(5, NULL);
     assert(rc == 0);
+#endif
+
+#if MYNEWT_VAL(ADC_0)
+rc = os_dev_create((struct os_dev *) &os_bsp_adc0, "adc0",
+                   OS_DEV_INIT_KERNEL,
+                   OS_DEV_INIT_PRIO_DEFAULT,
+                   nrf52_adc_dev_init,
+                   &os_bsp_adc0_config);
+assert(rc == 0);
 #endif
 
 #if MYNEWT_VAL(PWM_0)
