@@ -38,9 +38,6 @@
 /* Mynewt Nordic driver */
 #include "pwm_nrf52/pwm_nrf52.h"
 
-#define PWM_MAX_INSTANCES 3
-#define MAX_FREQ_HZ 16000000
-
 struct nrf53_pwm_dev_global {
     bool in_use;
     bool playing;
@@ -340,36 +337,39 @@ nrf52_pwm_set_frequency(struct pwm_dev *dev, uint32_t freq_hz)
 {
     int inst_id = dev->pwm_instance_id;
     nrf_pwm_clk_t *frq = &instances[inst_id].config.base_clock;
+    uint16_t *top_value = &instances[inst_id].config.top_value;
+    uint32_t base_freq_val;
 
-    switch (freq_hz) {
-    case 16000000:
+    freq_hz = (freq_hz > 7999999) ? 7999999 : freq_hz;
+    freq_hz = (freq_hz < 2) ? 2 : freq_hz;
+
+    if (freq_hz > 244) {
         *frq = NRF_PWM_CLK_16MHz;
-        break;
-    case 8000000:
+        base_freq_val = 16000000;
+    } else if (freq_hz > 122) {
         *frq = NRF_PWM_CLK_8MHz;
-        break;
-    case 4000000:
+        base_freq_val = 8000000;
+    } else if (freq_hz > 61) {
         *frq = NRF_PWM_CLK_4MHz;
-        break;
-    case 2000000:
+        base_freq_val = 4000000;
+    } else if (freq_hz > 30) {
         *frq = NRF_PWM_CLK_2MHz;
-        break;
-    case 1000000:
+        base_freq_val = 2000000;
+    } else if (freq_hz > 15) {
         *frq = NRF_PWM_CLK_1MHz;
-        break;
-    case 500000:
+        base_freq_val = 1000000;
+    } else if (freq_hz > 7) {
         *frq = NRF_PWM_CLK_500kHz;
-        break;
-    case 250000:
+        base_freq_val = 500000;
+    } else if (freq_hz > 3) {
         *frq = NRF_PWM_CLK_250kHz;
-        break;
-    case 125000:
+        base_freq_val = 250000;
+    } else if (freq_hz > 1) {
         *frq = NRF_PWM_CLK_125kHz;
-        break;
-    default:
-        return (EINVAL);
+        base_freq_val = 125000;
     }
 
+    *top_value = base_freq_val / freq_hz;
 
     if (instances[inst_id].playing) {
         nrf_drv_pwm_uninit(&instances[inst_id].drv_instance);
@@ -380,7 +380,7 @@ nrf52_pwm_set_frequency(struct pwm_dev *dev, uint32_t freq_hz)
         play_current_config(&instances[inst_id]);
     }
 
-    return (0);
+    return base_freq_val;
 }
 
 /**
@@ -414,7 +414,7 @@ nrf52_pwm_get_clock_freq(struct pwm_dev *dev)
     case NRF_PWM_CLK_125kHz:
         return (125000);
     }
-    return (EINVAL);
+    return (-EINVAL);
 }
 
 /**
@@ -430,25 +430,41 @@ nrf52_pwm_get_resolution_bits(struct pwm_dev *dev)
     int inst_id = dev->pwm_instance_id;
     assert(instances[inst_id].in_use);
 
-    switch (instances[inst_id].config.base_clock) {
-    case NRF_PWM_CLK_16MHz:
-        return (0);
-    case NRF_PWM_CLK_8MHz:
-        return (1);
-    case NRF_PWM_CLK_4MHz:
-        return (2);
-    case NRF_PWM_CLK_2MHz:
-        return (3);
-    case NRF_PWM_CLK_1MHz:
-        return (4);
-    case NRF_PWM_CLK_500kHz:
-        return (5);
-    case NRF_PWM_CLK_250kHz:
-        return (6);
-    case NRF_PWM_CLK_125kHz:
+    uint16_t top_val = instances[inst_id].config.top_value;
+    if (top_val >= 32768)
+    {
+        return (15);
+    } else if (top_val >= 16384) {
+        return (14);
+    } else if (top_val >= 8192) {
+        return (13);
+    } else if (top_val >= 4096) {
+        return (12);
+    } else if (top_val >= 2048) {
+        return (11);
+    } else if (top_val >= 1024) {
+        return (10);
+    } else if (top_val >= 512) {
+        return (9);
+    } else if (top_val >= 256) {
+        return (8);
+    } else if (top_val >= 128) {
         return (7);
+    } else if (top_val >= 64) {
+        return (6);
+    } else if (top_val >= 32) {
+        return (5);
+    } else if (top_val >= 16) {
+        return (4);
+    } else if (top_val >= 8) {
+        return (3);
+    } else if (top_val >= 4) {
+        return (2);
+    } else if (top_val >= 2) {
+        return (1);
     }
-    return (EINVAL);
+
+    return (-EINVAL);
 }
 
 /**
