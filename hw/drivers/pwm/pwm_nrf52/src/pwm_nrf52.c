@@ -340,7 +340,10 @@ nrf52_pwm_set_frequency(struct pwm_dev *dev, uint32_t freq_hz)
     uint16_t *top_value = &instances[inst_id].config.top_value;
     uint32_t base_freq_val;
 
-    if (freq_hz > 244 && freq_hz < 8000000) {
+    freq_hz = (freq_hz > 7999999) ? 7999999 : freq_hz;
+    freq_hz = (freq_hz < 2) ? 2 : freq_hz;
+
+    if (freq_hz > 244) {
         *frq = NRF_PWM_CLK_16MHz;
         base_freq_val = 16000000;
     } else if (freq_hz > 122) {
@@ -364,9 +367,8 @@ nrf52_pwm_set_frequency(struct pwm_dev *dev, uint32_t freq_hz)
     } else if (freq_hz > 1) {
         *frq = NRF_PWM_CLK_125kHz;
         base_freq_val = 125000;
-    } else {
-        return (-EINVAL);
     }
+
     *top_value = base_freq_val / freq_hz;
 
     if (instances[inst_id].playing) {
