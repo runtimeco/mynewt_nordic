@@ -38,9 +38,6 @@
 /* Mynewt Nordic driver */
 #include "pwm_nrf52/pwm_nrf52.h"
 
-#define PWM_MAX_INSTANCES 3
-#define MAX_FREQ_HZ 16000000
-
 struct nrf53_pwm_dev_global {
     bool in_use;
     bool playing;
