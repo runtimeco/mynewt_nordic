@@ -94,7 +94,6 @@ init_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
     nrf_drv_pwm_config_t *config;
     instances[inst_id].duty_cycles = NULL;
 
-    //what should the defaults be?
     config = &instances[inst_id].config;
     if (!init_conf) {
         config->output_pins[0] = NRF_DRV_PWM_PIN_NOT_USED;
@@ -272,9 +271,11 @@ nrf52_pwm_enable_duty_cycle(struct pwm_dev *dev, uint8_t cnum, uint16_t fraction
     int stat;
     int inst_id = dev->pwm_instance_id;
     nrf_drv_pwm_config_t *config;
+    bool inverted;
 
     config = &instances[inst_id].config;
     assert (config->output_pins[cnum] != NRF_DRV_PWM_PIN_NOT_USED);
+    inverted = ((config->output_pins[cnum] & NRF_DRV_PWM_PIN_INVERTED) != 0);
 
     if (instances[inst_id].duty_cycles == NULL) {
         instances[inst_id].duty_cycles = (nrf_pwm_values_individual_t *)
@@ -282,7 +283,8 @@ nrf52_pwm_enable_duty_cycle(struct pwm_dev *dev, uint8_t cnum, uint16_t fraction
         assert(instances[inst_id].duty_cycles);
     }
 
-    ((uint16_t *) instances[inst_id].duty_cycles)[cnum] = fraction;
+    ((uint16_t *) instances[inst_id].duty_cycles)[cnum] =
+        (inverted) ? fraction : config->top_value - fraction;
 
     if (!instances[inst_id].playing) {
         stat = nrf_drv_pwm_init(&instances[inst_id].drv_instance,
@@ -315,7 +317,7 @@ nrf52_pwm_disable(struct pwm_dev *dev, uint8_t cnum)
     nrf_drv_pwm_init(&instances[inst_id].drv_instance,
                      &instances[inst_id].config,
                      NULL);
-    //check if there is any channel in use
+    /* check if there is any channel in use */
     if (instances[inst_id].playing) {
         play_current_config(&instances[inst_id]);
     }
