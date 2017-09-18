@@ -26,7 +26,6 @@ typedef struct
 // User callbacks local storage.
 static nrf_drv_rtc_handler_t m_handlers[RTC_COUNT];
 static nrf_drv_rtc_cb_t      m_cb[RTC_COUNT];
-
 static const nrf_drv_rtc_config_t m_default_config[] = {
 #if RTC0_ENABLED
     NRF_DRV_RTC_DEFAULT_CONFIG(0),

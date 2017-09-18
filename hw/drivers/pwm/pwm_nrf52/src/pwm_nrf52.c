@@ -208,7 +208,7 @@ play_current_config(struct nrf53_pwm_dev_global *instance)
     nrf_pwm_sequence_t const seq =
         {
             .values.p_individual = instance->duty_cycles,
-            .length              = 4,
+            .length              = 1,
             .repeats             = 0,
             .end_delay           = 0
         };
