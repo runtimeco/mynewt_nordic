@@ -27,6 +27,9 @@ typedef struct
 static nrf_drv_rtc_handler_t m_handlers[RTC_COUNT];
 static nrf_drv_rtc_cb_t      m_cb[RTC_COUNT];
 
+#define ANY_RTCS (RTC0_ENABLED || RTC1_ENABLED || RTC2_ENABLED)
+
+#if ANY_RTCS
 static const nrf_drv_rtc_config_t m_default_config[] = {
 #if RTC0_ENABLED
     NRF_DRV_RTC_DEFAULT_CONFIG(0),
@@ -38,6 +41,7 @@ static const nrf_drv_rtc_config_t m_default_config[] = {
     NRF_DRV_RTC_DEFAULT_CONFIG(2)
 #endif
 };
+#endif
 
 ret_code_t nrf_drv_rtc_init(nrf_drv_rtc_t const * const p_instance,
                             nrf_drv_rtc_config_t const * p_config,
@@ -52,10 +56,12 @@ ret_code_t nrf_drv_rtc_init(nrf_drv_rtc_t const * const p_instance,
         return NRF_ERROR_INVALID_PARAM;
     }
 
+#if ANY_RTCS
     if (p_config == NULL)
     {
         p_config = &m_default_config[p_instance->instance_id];
     }
+#endif
 
     if (m_cb[p_instance->instance_id].state != NRF_DRV_STATE_UNINITIALIZED)
     {
