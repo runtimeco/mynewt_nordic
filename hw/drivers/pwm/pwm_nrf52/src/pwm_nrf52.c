@@ -52,7 +52,7 @@ static struct nrf53_pwm_dev_global instances[] =
     [0].in_use = false,
     [0].playing = false,
     [0].drv_instance = NRF_DRV_PWM_INSTANCE(0),
-    [0].config = NRF_DRV_PWM_DEFAULT_CONFIG(0),
+    [0].config = NRF_DRV_PWM_DEFAULT_CONFIG,
     [0].duty_cycles = NULL
 #endif
 #if (PWM1_ENABLED == 1)
@@ -60,7 +60,7 @@ static struct nrf53_pwm_dev_global instances[] =
     [1].in_use = false,
     [1].playing = false,
     [1].drv_instance = NRF_DRV_PWM_INSTANCE(1),
-    [1].config = NRF_DRV_PWM_DEFAULT_CONFIG(1),
+    [1].config = NRF_DRV_PWM_DEFAULT_CONFIG,
     [1].duty_cycles = NULL
 #endif
 #if (PWM2_ENABLED == 1)
@@ -68,7 +68,7 @@ static struct nrf53_pwm_dev_global instances[] =
     [2].in_use = false,
     [2].playing = false,
     [2].drv_instance = NRF_DRV_PWM_INSTANCE(2),
-    [2].config = NRF_DRV_PWM_DEFAULT_CONFIG(2),
+    [2].config = NRF_DRV_PWM_DEFAULT_CONFIG,
     [2].duty_cycles = NULL
 #endif
 };

@@ -1,3 +1,4 @@
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -30,6 +31,29 @@ pkg.ign_files.BSP_NRF52:
     - "nrf_drv_adc.c"
     - "pstorage*"
     - "sdk_mapped_flags.c"
+    # - "nrf_drv_clock.c"
+    # - "nrf_drv_gpiote.c"
+    # - "nrf_log_ctl.h"
+    # - "nrf_drv_comp.c"
+    # - "nrf_drv_lpcomp.c"
+    # - "nrf_drv_common.c"
+    # - "nrf_drv_i2s.c"
+    # - "nrf_drv_power.c"
+    # - "nrf_drv_pdm.c"
+    # - "nrf_drv_ppi.c"
+    - "nrf_drv_qdec.c"
+    # - "nrf_drv_qspi.c"
+    # - "nrf_drv_rng.c"
+    # - "nrf_drv_rtc.c"
+    # - "nrf_drv_spi.c"
+    # - "nrf_drv_spis.c"
+    # - "nrf_drv_systick.c"
+    # - "nrf_drv_timer.c"
+    # - "nrf_drv_twi.c"
+    # - "nrf_drv_uart.c"
+    # - "nrf_drv_twis.c"
+    # - "nrf_drv_wdt.c"
+    # - "app_fifo.c"
 
 pkg.ign_files.BSP_NRF51:
     - "nrf_saadc.c"
@@ -48,9 +72,9 @@ pkg.ign_dirs:
     - "deprecated"
 
 pkg.src_dirs:
-    - "src/ext/nRF5_SDK_11.0.0_89a8197/components/drivers_nrf/"
-    - "src/ext/nRF5_SDK_11.0.0_89a8197/components/libraries/fifo/"
-    - "src/ext/nRF5_SDK_11.0.0_89a8197/components/libraries/util/"
+    - "src/ext/nRF5_SDK_14.0.0_3bcc1f7/components/libraries/util/"
+    - "src/ext/nRF5_SDK_14.0.0_3bcc1f7/components/drivers_nrf/"
+    - "src/ext/nRF5_SDK_14.0.0_3bcc1f7/components/libraries/fifo/"
 
 pkg.cflags: -std=gnu99 -DNRF52_PAN_28
 
