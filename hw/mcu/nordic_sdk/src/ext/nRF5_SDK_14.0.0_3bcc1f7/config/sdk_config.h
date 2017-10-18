@@ -2316,7 +2316,7 @@
 // <e> QDEC_ENABLED - nrf_drv_qdec - QDEC peripheral driver
 //==========================================================
 #ifndef QDEC_ENABLED
-#define QDEC_ENABLED 1
+#define QDEC_ENABLED 0
 #endif
 // <o> QDEC_CONFIG_REPORTPER  - Report period
  
