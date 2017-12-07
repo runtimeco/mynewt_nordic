@@ -43,7 +43,7 @@ struct nrf53_pwm_dev_global {
     bool playing;
     nrf_drv_pwm_t drv_instance;
     nrf_drv_pwm_config_t config;
-    nrf_pwm_values_individual_t *duty_cycles;
+    nrf_pwm_values_individual_t duty_cycles;
 };
 
 static struct nrf53_pwm_dev_global instances[] =
@@ -53,7 +53,7 @@ static struct nrf53_pwm_dev_global instances[] =
     [0].playing = false,
     [0].drv_instance = NRF_DRV_PWM_INSTANCE(0),
     [0].config = NRF_DRV_PWM_DEFAULT_CONFIG(0),
-    [0].duty_cycles = NULL
+    [0].duty_cycles = {0}
 #endif
 #if (PWM1_ENABLED == 1)
     ,
@@ -61,7 +61,7 @@ static struct nrf53_pwm_dev_global instances[] =
     [1].playing = false,
     [1].drv_instance = NRF_DRV_PWM_INSTANCE(1),
     [1].config = NRF_DRV_PWM_DEFAULT_CONFIG(1),
-    [1].duty_cycles = NULL
+    [1].duty_cycles = {0}
 #endif
 #if (PWM2_ENABLED == 1)
     ,
@@ -69,7 +69,7 @@ static struct nrf53_pwm_dev_global instances[] =
     [2].playing = false,
     [2].drv_instance = NRF_DRV_PWM_INSTANCE(2),
     [2].config = NRF_DRV_PWM_DEFAULT_CONFIG(2),
-    [2].duty_cycles = NULL
+    [2].duty_cycles = {0}
 #endif
 };
 
@@ -92,7 +92,8 @@ init_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
         return (EINVAL);
     }
     nrf_drv_pwm_config_t *config;
-    instances[inst_id].duty_cycles = NULL;
+    memset(&instances[inst_id].duty_cycles, 0,
+		sizeof(instances[inst_id].duty_cycles));
 
     config = &instances[inst_id].config;
     if (!init_conf) {
@@ -119,11 +120,7 @@ init_instance(int inst_id, nrf_drv_pwm_config_t* init_conf)
 static void
 cleanup_instance(int inst_id)
 {
-    if (instances[inst_id].playing) {
-        free(instances[inst_id].duty_cycles);
-        instances[inst_id].duty_cycles = NULL;
-        instances[inst_id].playing = false;
-    }
+    instances[inst_id].playing = false;
     instances[inst_id].in_use = false;
 }
 
@@ -207,7 +204,7 @@ play_current_config(struct nrf53_pwm_dev_global *instance)
 {
     nrf_pwm_sequence_t const seq =
         {
-            .values.p_individual = instance->duty_cycles,
+            .values.p_individual = &instance->duty_cycles,
             .length              = 4,
             .repeats             = 0,
             .end_delay           = 0
@@ -277,13 +274,7 @@ nrf52_pwm_enable_duty_cycle(struct pwm_dev *dev, uint8_t cnum, uint16_t fraction
     assert (config->output_pins[cnum] != NRF_DRV_PWM_PIN_NOT_USED);
     inverted = ((config->output_pins[cnum] & NRF_DRV_PWM_PIN_INVERTED) != 0);
 
-    if (instances[inst_id].duty_cycles == NULL) {
-        instances[inst_id].duty_cycles = (nrf_pwm_values_individual_t *)
-            calloc(1, sizeof(nrf_pwm_sequence_t));
-        assert(instances[inst_id].duty_cycles);
-    }
-
-    ((uint16_t *) instances[inst_id].duty_cycles)[cnum] =
+    ((uint16_t *) &instances[inst_id].duty_cycles)[cnum] =
         (inverted) ? fraction : config->top_value - fraction;
 
     if (!instances[inst_id].playing) {
@@ -343,30 +334,30 @@ nrf52_pwm_set_frequency(struct pwm_dev *dev, uint32_t freq_hz)
     uint32_t base_freq_val;
 
     freq_hz = (freq_hz > 7999999) ? 7999999 : freq_hz;
-    freq_hz = (freq_hz < 2) ? 2 : freq_hz;
+    freq_hz = (freq_hz < 3) ? 3 : freq_hz;
 
-    if (freq_hz > 244) {
+    if (freq_hz > 488) {
         *frq = NRF_PWM_CLK_16MHz;
         base_freq_val = 16000000;
-    } else if (freq_hz > 122) {
+    } else if (freq_hz > 244) {
         *frq = NRF_PWM_CLK_8MHz;
         base_freq_val = 8000000;
-    } else if (freq_hz > 61) {
+    } else if (freq_hz > 122) {
         *frq = NRF_PWM_CLK_4MHz;
         base_freq_val = 4000000;
-    } else if (freq_hz > 30) {
+    } else if (freq_hz > 61) {
         *frq = NRF_PWM_CLK_2MHz;
         base_freq_val = 2000000;
-    } else if (freq_hz > 15) {
+    } else if (freq_hz > 30) {
         *frq = NRF_PWM_CLK_1MHz;
         base_freq_val = 1000000;
-    } else if (freq_hz > 7) {
+    } else if (freq_hz > 14) {
         *frq = NRF_PWM_CLK_500kHz;
         base_freq_val = 500000;
-    } else if (freq_hz > 3) {
+    } else if (freq_hz > 6) {
         *frq = NRF_PWM_CLK_250kHz;
         base_freq_val = 250000;
-    } else if (freq_hz > 1) {
+    } else if (freq_hz > 2) {
         *frq = NRF_PWM_CLK_125kHz;
         base_freq_val = 125000;
     }
