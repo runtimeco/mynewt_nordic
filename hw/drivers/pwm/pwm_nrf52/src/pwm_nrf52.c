@@ -38,7 +38,7 @@
 /* Mynewt Nordic driver */
 #include "pwm_nrf52/pwm_nrf52.h"
 
-struct nrf53_pwm_dev_global {
+struct nrf52_pwm_dev_global {
     bool in_use;
     bool playing;
     nrf_drv_pwm_t drv_instance;
@@ -46,7 +46,7 @@ struct nrf53_pwm_dev_global {
     nrf_pwm_values_individual_t duty_cycles;
 };
 
-static struct nrf53_pwm_dev_global instances[] =
+static struct nrf52_pwm_dev_global instances[] =
 {
 #if (PWM0_ENABLED == 1)
     [0].in_use = false,
@@ -200,7 +200,7 @@ nrf52_pwm_close(struct os_dev *odev)
  * Play using current configuration.
  */
 static void
-play_current_config(struct nrf53_pwm_dev_global *instance)
+play_current_config(struct nrf52_pwm_dev_global *instance)
 {
     nrf_pwm_sequence_t const seq =
         {
@@ -210,7 +210,7 @@ play_current_config(struct nrf53_pwm_dev_global *instance)
             .end_delay           = 0
         };
 
-    nrf_drv_pwm_simple_playback(&instances->drv_instance,
+    nrf_drv_pwm_simple_playback(&instance->drv_instance,
                                 &seq,
                                 1,
                                 NRF_DRV_PWM_FLAG_LOOP);
